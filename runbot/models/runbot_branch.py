@@ -58,11 +58,12 @@ class RunbotBranch(models.Model):
     def _compute_branch_url(self):
         for branch in self:
             if re.match('^[0-9]+$', branch.branch_name):
-                branch.branch_url = "https://%s/pull/%s" % (
-                    branch.repo_id.base, branch.branch_name)
+                branch.branch_url = "https://%s/pull/%s" % (branch.repo_id.base, branch.branch_name)
             else:
-                branch.branch_url = "https://%s/tree/%s" % (
-                    branch.repo_id.base, branch.branch_name)
+                branch.branch_url = "https://%s/tree/%s" % (branch.repo_id.base, branch.branch_name)
+            # Fix
+            if 'https://https://' in branch.branch_url:
+                branch.branch_url = branch.branch_url.replace('https://https://', 'https://')
 
     @api.depends('name')
     def _compute_pull_head_name(self):

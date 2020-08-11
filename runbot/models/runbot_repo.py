@@ -90,13 +90,15 @@ class RunbotRepo(models.Model):
         for repo in self:
             name = re.sub('.+@', '', repo.name)
             name = re.sub('.git$', '', name)
-            name = name.replace(':', '/')
+            if 'https://' not in name:
+                name = name.replace(':', '/')
             repo.base = name
 
     @api.model
     def _domain(self):
         conf_obj = self.env['ir.config_parameter'].sudo()
-        return conf_obj.get_param('runbot.domain', fqdn())
+        # return conf_obj.get_param('runbot.domain', fqdn())
+        return conf_obj.get_param('runbot.domain')
 
     @api.model
     def _root(self):
@@ -111,7 +113,13 @@ class RunbotRepo(models.Model):
         for repo in self:
             cmd = ['git', '--git-dir=%s' % repo.path] + cmd
             _logger.info("git: %s", ' '.join(cmd))
-            return subprocess.check_output(cmd)
+            # return subprocess.check_output(cmd)
+            try:
+                return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                _logger.info('subprocess.CalledProcessError')
+                _logger.info("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+                return
 
     @api.multi
     def _git_export(self, treeish, dest):
@@ -181,7 +189,7 @@ class RunbotRepo(models.Model):
     @api.multi
     def _update_git(self):
         self.ensure_one()
-        _logger.debug('repo %s updating branches', self.name)
+        _logger.info('repo %s updating branches', self.name)
 
         Build = self.env['runbot.build']
         Branch = self.env['runbot.branch']
@@ -190,7 +198,14 @@ class RunbotRepo(models.Model):
             os.makedirs(self.path)
 
         if not os.path.isdir(os.path.join(self.path, 'refs')):
-            run(['git', 'clone', '--bare', self.name, self.path])
+            # run(['git', 'clone', '--bare', self.name, self.path])
+            cmd = ['git', 'clone', '--bare', self.name, self.path]
+            _logger.info(cmd)
+            try:
+                subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                _logger.info('subprocess.CalledProcessError')
+                _logger.info("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 
         # check for mode == hook
         fname_fetch_head = os.path.join(self.path, 'FETCH_HEAD')
@@ -205,6 +220,7 @@ class RunbotRepo(models.Model):
                               int(t0 - fetch_time),
                               int(t0 - dt2time(self.hook_time)))
                 return
+
 
         self._git(['gc', '--auto', '--prune=all'])
         self._git(['fetch', '-p', 'origin', '+refs/heads/*:refs/heads/*'])
@@ -222,7 +238,6 @@ class RunbotRepo(models.Model):
         ]
 
         fmt = "%00".join(["%(" + field + ")" for field in fields])
-
         refs = [
             'for-each-ref',
             '--format',
@@ -233,7 +248,6 @@ class RunbotRepo(models.Model):
         ]
         git_refs = self._git(refs)
         git_refs = git_refs.strip()
-
         refs = [[decode_utf(field) for field in line.split(b'\x00')]
                 for line in git_refs.split(b'\n')]
 
@@ -252,7 +266,7 @@ class RunbotRepo(models.Model):
             if ref_branches.get(name):
                 branch = Branch.browse(ref_branches[name])
             else:
-                _logger.debug('repo %s found new branch %s', self.name, name)
+                _logger.info('repo %s found new branch %s', self.name, name)
                 branch = Branch.create({'repo_id': self.id, 'name': name})
 
             # skip build for old branches
@@ -264,7 +278,7 @@ class RunbotRepo(models.Model):
                 [('branch_id', '=', branch.id), ('name', '=', sha)])
 
             if not build:
-                _logger.debug('repo %s branch %s new build found revno %s',
+                _logger.info('repo %s branch %s new build found revno %s',
                               branch.repo_id.name, branch.name, sha)
 
                 build_info = {
@@ -434,8 +448,11 @@ class RunbotRepo(models.Model):
     @api.multi
     def _cron(self):
         repo = self.search([('mode', '!=', 'disabled')])
+        _logger.info('_update')
         repo._update()
+        _logger.info('_scheduler')
         repo._scheduler()
+        _logger.info('_reload_nginx')
         repo._reload_nginx()
 
     # backwards compatibility
