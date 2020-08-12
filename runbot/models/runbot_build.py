@@ -817,7 +817,8 @@ class RunbotBuild(models.Model):
                 port = self._find_port()
 
                 build.write({
-                    'host': fqdn(),
+                    # 'host': fqdn(),
+                    'host': self.env['ir.config_parameter'].sudo().get_param('runbot.domain'),
                     'port': port,
                     'state': 'testing',
                     'job': jobs[0],
