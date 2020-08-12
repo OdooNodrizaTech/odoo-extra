@@ -324,7 +324,8 @@ class RunbotRepo(models.Model):
         get_param = self.env['ir.config_parameter'].get_param
         workers = int(get_param('runbot.workers', default=6))
         running_max = int(get_param('runbot.running_max', default=75))
-        host = fqdn()
+        # host = fqdn()
+        host = self.env['ir.config_parameter'].sudo().get_param('runbot.domain')
 
         Build = self.env['runbot.build']
         domain = [('repo_id', 'in', self.ids)]

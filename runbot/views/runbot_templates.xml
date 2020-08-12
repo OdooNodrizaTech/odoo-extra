@@ -86,7 +86,7 @@
         <a t-attf-href="/runbot/build/{{bu['id']}}" class="btn btn-secondary">
           <i class="fa fa-file-text-o"/>
         </a>
-        <a t-attf-href="https://#{repo.base}/commit/#{bu['name']}" class="btn btn-secondary">
+        <a t-attf-href="#{repo.base}/commit/#{bu['name']}" class="btn btn-secondary">
           <i class="fa fa-github"/>
         </a>
         <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
@@ -154,12 +154,12 @@
             </a>
           </li>
           <li class="dropdown-item">
-            <a t-attf-href="https://{{repo.base}}/commit/{{bu['name']}}">Commit
+            <a t-attf-href="{{repo.base}}/commit/{{bu['name']}}">Commit
               <i class="fa fa-github"/>
             </a>
           </li>
           <li class="dropdown-item">
-            <a t-attf-href="https://{{repo.base}}/compare/{{br['branch'].branch_name}}">Compare
+            <a t-attf-href="{{repo.base}}/compare/{{br['branch'].branch_name}}">Compare
               <i class="fa fa-github"/>
             </a>
           </li>
