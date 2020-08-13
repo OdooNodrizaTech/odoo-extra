@@ -466,7 +466,7 @@
                         <t t-esc="bu['committer']"/>)                        </t>
                       <br/>
                       <i class="fa fa-envelope-o"></i>
-                      <a t-attf-href="https://#{repo['base']}/commit/#{bu['name']}">
+                      <a t-attf-href="#{repo['base']}/commit/#{bu['name']}">
                         <t t-esc="bu['subject'][:32] + ('...' if bu['subject'][32:] else '') " t-att-title="bu['subject']"/>
                       </a>
                       <br/>
