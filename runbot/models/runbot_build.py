@@ -505,6 +505,7 @@ class RunbotBuild(models.Model):
     @api.model
     def _local_pg_dropdb(self, dbname):
         with local_pgadmin_cursor() as local_cr:
+            local_cr.execute("SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '%s' AND pid <> pg_backend_pid()" % dbname)
             local_cr.execute('DROP DATABASE IF EXISTS "%s"' % dbname)
         # cleanup filestore
         datadir = appdirs.user_data_dir()
